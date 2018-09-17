@@ -24,7 +24,6 @@ defmodule DnsCryptEx.Types.Query do
 
   @type algorithm :: :xsalsa20poly1305 | :xchacha20poly1305
   @type t :: %__MODULE__{}
-  @type algorithm
 
   #####################
   # Struct Definition #
@@ -48,6 +47,12 @@ defmodule DnsCryptEx.Types.Query do
           encrypted_query::binary()>>
       )
       when algorithm in @supported_algorithms do
+    %__MODULE__{
+      client_magic: magic,
+      client_pk: pk,
+      client_nonce: nonce,
+      encrypted_query: encrypted_query
+    }
   end
 
   def from_binary(
@@ -56,6 +61,12 @@ defmodule DnsCryptEx.Types.Query do
           encrypted_query::binary()>>
       )
       when algorithm in @supported_algorithms do
+    %__MODULE__{
+      client_magic: magic,
+      client_pk: pk,
+      client_nonce: nonce,
+      encrypted_query: encrypted_query
+    }
   end
 
   def from_binary(algorithm, _query) when algorithm not in @supported_algorithms do
