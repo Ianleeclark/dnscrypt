@@ -23,13 +23,19 @@ defmodule DnsCryptEx.Types.Query do
   ####################
 
   @type algorithm :: :xsalsa20poly1305 | :xchacha20poly1305
-  @type t :: %__MODULE__{}
+  @type t :: %__MODULE__{
+          client_magic: binary(),
+          client_pk: binary(),
+          client_nonce: binary(),
+          encrypted_query: binary(),
+          algorithm: algorithm()
+        }
 
   #####################
   # Struct Definition #
   #####################
 
-  @required_keys [:client_magic, :client_pk, :client_nonce, :encrypted_query]
+  @required_keys [:client_magic, :client_pk, :client_nonce, :encrypted_query, :algorithm]
   @enforce @required_keys
   defstruct @required_keys
 
@@ -38,46 +44,42 @@ defmodule DnsCryptEx.Types.Query do
   ##############
 
   @doc """
-  Converts a binary blob into a usable Query.
+  Converts query struct to binary.
   """
-  @spec from_binary(algorithm :: algorithm(), binary()) :: __MODULE__.t()
-  def from_binary(
-        :xsalsa20poly1305,
-        <<magic::8, pk::size(@xsalsa_key_len), nonce::size(@xsalsa_nonce_len),
-          encrypted_query::binary()>>
-      )
-      when algorithm in @supported_algorithms do
-    %__MODULE__{
-      client_magic: magic,
-      client_pk: pk,
-      client_nonce: nonce,
-      encrypted_query: encrypted_query
-    }
+  @spec to_binary(__MODULE__.t()) :: binary() | {:error, :invalid_query}
+  def to_binary(
+        %__MODULE__{
+          algorithm: :xsalsa20poly1305
+        } = query
+      ) do
+    do_to_binary(query, @xsalsa_key_len, @xsalsa_nonce_len)
   end
 
-  def from_binary(
-        :xchacha20poly1305,
-        <<magic::8, pk::size(@xchacha_key_len), nonce::size(@xchacha_nonce_len),
-          encrypted_query::binary()>>
-      )
-      when algorithm in @supported_algorithms do
-    %__MODULE__{
-      client_magic: magic,
-      client_pk: pk,
-      client_nonce: nonce,
-      encrypted_query: encrypted_query
-    }
+  def to_binary(
+        %__MODULE__{
+          algorithm: :xchacha20poly1305
+        } = query
+      ) do
+    do_to_binary(query, @xchacha_key_len, @xchacha_nonce_len)
   end
 
-  def from_binary(algorithm, _query) when algorithm not in @supported_algorithms do
-    {:error, :invalid_algorithm}
-  end
-
-  def from_binary(_, _) do
-    {:error, :invalid_data}
-  end
+  def to_binary(_), do: {:error, :invalid_query}
 
   ##############################
   # Internal Private Functions #
   ##############################
+
+  @spec do_to_binary(__MODULE__.t()) :: binary()
+  def do_to_binary(
+        %__MODULE__{
+          client_magic: magic,
+          client_pk: pk,
+          client_nonce: nonce,
+          encrypted_query: encrypted_query
+        },
+        key_len,
+        nonce_len
+      ) do
+    <<magic::8, pk::size(key_len), nonce::size(nonce_len), encrypted_query::binary()>>
+  end
 end
