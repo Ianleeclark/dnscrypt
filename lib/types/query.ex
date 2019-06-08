@@ -1,10 +1,14 @@
-defmodule DnsCryptEx.Types.Query do
+defmodule Dnscrypt.Types.Query do
   @moduledoc """
   Defines what a DNS query is to our system.
   """
 
-  alias Salty.Secretbox.Xchacha20poly1305
-  alias Salty.Secretbox.Xsalsa20poly1305
+  ##########
+  # Guards #
+  ##########
+
+  defguardp is_binary_of_octet_size(value, size)
+            when is_number(size) and is_binary(value) and byte_size(value) == size
 
   #############
   # Constants #
@@ -12,11 +16,16 @@ defmodule DnsCryptEx.Types.Query do
 
   @supported_algorithms [:xsalsa20poly1305, :xchacha20poly1305]
 
-  @xchacha_key_len Xchacha20poly1305.keybytes()
-  @xsalsa_key_len Xchacha20poly1305.keybytes()
+  # Defined as `Salty.Secretbox.Xchacha20poly1305.{key,nonce}bytes`
+  # Can't call, though due to nif loading post-compilation
+  @xchacha_key_len 32
+  @xchacha_nonce_len 24
 
-  @xchacha_nonce_len Xchacha20poly1305.keybytes()
-  @xsalsa_nonce_len Xsalsa20poly1305.keybytes()
+  # Defined as `Salty.Secretbox.Xsalsa20poly1305.{key,nonce}bytes`
+  @xsalsa_key_len 32
+  @xsalsa_nonce_len 24
+
+  @client_magic_octet_len 8
 
   ####################
   # Type Definitions #
@@ -36,12 +45,43 @@ defmodule DnsCryptEx.Types.Query do
   #####################
 
   @required_keys [:client_magic, :client_pk, :client_nonce, :encrypted_query, :algorithm]
-  @enforce @required_keys
+  @enforce_keys @required_keys
   defstruct @required_keys
 
   ##############
   # Public API #
   ##############
+
+  @doc """
+  """
+  @spec new(
+          client_magic :: binary(),
+          client_pk :: binary(),
+          client_nonce :: binary(),
+          algorithm :: algorithm()
+        ) :: __MODULE__.t() | {:error, :invalid_algorithm} | {:error, :invalid_query_data}
+  def new(client_magic, client_pk, client_nonce, algorithm)
+      when algorithm in @supported_algorithms and
+             is_binary_of_octet_size(client_magic, @client_magic_octet_len) and
+             is_binary(client_pk) and is_binary(client_nonce) do
+    %__MODULE__{
+      client_magic: client_magic,
+      client_pk: client_pk,
+      client_nonce: client_nonce,
+      # TODO(ian): Based on the algorithm, formulate and encrypt the query
+      encrypted_query: <<0>>,
+      algorithm: algorithm
+    }
+  end
+
+  def new(_client_magic, _client_pk, _client_nonce, algorithm)
+      when algorithm not in @supported_algorithms do
+    {:error, :invalid_algorithm}
+  end
+
+  def new(_, _, _, _) do
+    {:error, :invalid_query_data}
+  end
 
   @doc """
   Converts query struct to binary.
@@ -69,17 +109,19 @@ defmodule DnsCryptEx.Types.Query do
   # Internal Private Functions #
   ##############################
 
-  @spec do_to_binary(__MODULE__.t()) :: binary()
+  @spec do_to_binary(__MODULE__.t(), key_len :: non_neg_integer(), nonce_len :: non_neg_integer()) ::
+          any()
   def do_to_binary(
         %__MODULE__{
-          client_magic: magic,
-          client_pk: pk,
-          client_nonce: nonce,
+          client_magic: <<magic>>,
+          client_pk: <<pk>>,
+          client_nonce: <<nonce>>,
           encrypted_query: encrypted_query
         },
         key_len,
         nonce_len
       ) do
-    <<magic::8, pk::size(key_len), nonce::size(nonce_len), encrypted_query::binary()>>
+    <<magic::size(@client_magic_octet_len), pk::size(key_len), nonce::size(nonce_len),
+      encrypted_query::binary()>>
   end
 end

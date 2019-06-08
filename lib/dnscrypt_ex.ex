@@ -1,4 +1,4 @@
-defmodule DnsCryptEx do
+defmodule Dnscrypt do
   @moduledoc """
   Documentation for DnscryptEx.
   """
@@ -8,7 +8,7 @@ defmodule DnsCryptEx do
 
   ## Examples
 
-      iex> DnscryptEx.hello
+      iex> Dnscrypt.hello
       :world
 
   """

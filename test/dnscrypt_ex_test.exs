@@ -1,8 +1,8 @@
-defmodule DnscryptExTest do
+defmodule DnscryptTest do
   use ExUnit.Case
-  doctest DnscryptEx
+  doctest Dnscrypt
 
   test "greets the world" do
-    assert DnscryptEx.hello() == :world
+    assert Dnscrypt.hello() == :world
   end
 end
