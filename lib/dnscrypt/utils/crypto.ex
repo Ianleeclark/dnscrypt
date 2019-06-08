@@ -1,6 +1,7 @@
 defmodule Dnscrypt.Utils.Crypto do
   @moduledoc false
 
+  alias Salty.Box.{Curve25519xchacha20poly1305, Curve25519xsalsa20poly1305}
   alias Dnscrypt.Types.Query
 
   @spec encrypt_query(
@@ -10,23 +11,58 @@ defmodule Dnscrypt.Utils.Crypto do
           client_nonce_pad :: binary(),
           client_query :: binary(),
           client_query_pad :: binary()
-        ) :: {:ok, binary()}
+        ) :: {:ok, binary()} | {:error, :failed_to_encrypt_query}
   def encrypt_query(
-        :xchacha20poly1305,
+        algorithm,
         shared_key,
         client_nonce,
-        client_nonce_pad,
+        # TODO(ian): Are these _pad necessary, or can I just use `create_padding`?
+        _client_nonce_pad,
         client_query,
-        client_query_pad
+        _client_query_pad
       ) do
-    {:ok, <<0>>}
+    padded_nonce = client_nonce <> create_padding(12)
+
+    # TODO(ian): Do whatever is necessary after this case, not complete
+    try do
+      case algorithm do
+        :xchacha20poly1305 ->
+          Curve25519xchacha20poly1305.easy_afternm(client_query, padded_nonce, shared_key)
+
+        :xsalsa20poly1305 ->
+          Curve25519xsalsa20poly1305.easy_afternm(client_query, padded_nonce, shared_key)
+      end
+    rescue
+      _ -> {:error, :failed_to_encrypt_query}
+    end
   end
 
-  @spec derive_shared_key(client_sk :: binary(), resolver_pk :: binary()) ::
-          {:ok, binary()} | {:error, :failed_to_derive_shared_key}
-  def derive_shared_key(client_sk, resolver_pk)
+  @spec derive_shared_key(
+          algorithm :: Query.algorithm(),
+          client_sk :: binary(),
+          resolver_pk :: binary()
+        ) ::
+          {:ok, binary()}
+          | {:error, :failed_to_derive_shared_key}
+          | {:error, :invalid_shared_key_derivation_data}
+  def derive_shared_key(:xchacha20poly1305, client_sk, resolver_pk)
       when is_binary(client_sk) and is_binary(resolver_pk) do
-    {:ok, <<0>>}
+    case Curve25519xchacha20poly1305.beforenm(client_sk, resolver_pk) do
+      {:ok, _derived_key} = response -> response
+      _ -> {:error, :failed_to_derive_shared_key}
+    end
+  end
+
+  def derive_shared_key(:xsalsa20poly1305, client_sk, resolver_pk)
+      when is_binary(client_sk) and is_binary(resolver_pk) do
+    case Curve25519xsalsa20poly1305.beforenm(client_sk, resolver_pk) do
+      {:ok, _derived_key} = response -> response
+      _ -> {:error, :failed_to_derive_shared_key}
+    end
+  end
+
+  def derive_shared_key(_, _, _) do
+    {:error, :invalid_shared_key_derivation_data}
   end
 
   @doc """
