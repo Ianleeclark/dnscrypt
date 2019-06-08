@@ -3,6 +3,7 @@ defmodule Dnscrypt.Network do
   A general purpose (supporting both TCP and UDP) networking api.
   """
 
+  alias Dnscrypt.Types.Certificate
   alias DNS
 
   @spec fetch_dns_certificate(
@@ -12,8 +13,10 @@ defmodule Dnscrypt.Network do
         ) :: binary() | {:error, :failed_to_fetch_resolver_certificate}
   def fetch_dns_certificate(hostname, resolver_ip, resolver_port) do
     case DNS.query(hostname, :txt, {resolver_ip, resolver_port}) do
-      %DNS.Record{anlist: [%DNS.Resource{domain: ^hostname, data: data, type: :txt} | _rest]} ->
+      %DNS.Record{anlist: [%DNS.Resource{data: [data]} | _rest]} ->
         data
+        |> Enum.into(<<>>, fn x -> <<x>> end)
+        |> Certificate.from_binary()
 
       _ ->
         {:error, :failed_to_fetch_resolver_certificate}
