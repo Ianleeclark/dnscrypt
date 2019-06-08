@@ -8,7 +8,8 @@ defmodule DnsCrypt.MixProject do
       elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases()
+      aliases: aliases(),
+      elixirc_options: [warnings_as_errors: true]
     ]
   end
 

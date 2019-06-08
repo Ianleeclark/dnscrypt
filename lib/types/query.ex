@@ -9,8 +9,6 @@ defmodule Dnscrypt.Types.Query do
   # Constants #
   #############
 
-  @supported_algorithms [:xsalsa20poly1305, :xchacha20poly1305]
-
   # Defined as `Salty.Secretbox.Xchacha20poly1305.{key,nonce}bytes`
   # Can't call, though due to nif loading post-compilation
   @xchacha_key_len 32
