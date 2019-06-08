@@ -21,6 +21,8 @@ defmodule DnsCrypt.MixProject do
   defp deps do
     [
       {:salty, "~> 0.1.3", hex: :libsalty},
+      {:dns, "~> 2.1.2"},
+      # Deployment, testing, &c.
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:stream_data, "~> 0.1", only: :test},
