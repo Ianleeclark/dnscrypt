@@ -96,10 +96,10 @@ defmodule Dnscrypt.Types.Certificate do
 
     new(
       :xsalsa20poly1305,
-      signature,
-      public_key,
-      client_magic,
-      serial,
+      <<signature::size(@signature_bit_len)>>,
+      <<public_key::size(@public_key_bit_len)>>,
+      <<client_magic::size(@client_magic_bit_len)>>,
+      <<serial::size(@serial_bit_len)>>,
       start_date,
       end_date,
       []
