@@ -58,9 +58,10 @@ defmodule Dnscrypt.Types.Query do
           client_magic :: binary(),
           client_pk :: binary(),
           client_nonce :: binary(),
+          encrypted_query :: binary(),
           algorithm :: algorithm()
         ) :: __MODULE__.t() | {:error, :invalid_algorithm} | {:error, :invalid_query_data}
-  def new(client_magic, client_pk, client_nonce, algorithm)
+  def new(client_magic, client_pk, client_nonce, encrypted_query, algorithm)
       when algorithm in @supported_algorithms and
              is_binary_of_octet_size(client_magic, @client_magic_octet_len) and
              is_binary(client_pk) and is_binary(client_nonce) do
@@ -68,8 +69,7 @@ defmodule Dnscrypt.Types.Query do
       client_magic: client_magic,
       client_pk: client_pk,
       client_nonce: client_nonce,
-      # TODO(ian): Based on the algorithm, formulate and encrypt the query
-      encrypted_query: <<0>>,
+      encrypted_query: encrypted_query,
       algorithm: algorithm
     }
   end
