@@ -3,12 +3,7 @@ defmodule Dnscrypt.Types.Query do
   Defines what a DNS query is to our system.
   """
 
-  ##########
-  # Guards #
-  ##########
-
-  defguardp is_binary_of_octet_size(value, size)
-            when is_number(size) and is_binary(value) and byte_size(value) == size
+  import Dnscrypt.Utils.Guards
 
   #############
   # Constants #
@@ -62,7 +57,7 @@ defmodule Dnscrypt.Types.Query do
           algorithm :: algorithm()
         ) :: __MODULE__.t() | {:error, :invalid_algorithm} | {:error, :invalid_query_data}
   def new(client_magic, client_pk, client_nonce, encrypted_query, algorithm)
-      when algorithm in @supported_algorithms and
+      when is_valid_encryption_algorithm(algorithm) and
              is_binary_of_octet_size(client_magic, @client_magic_octet_len) and
              is_binary(client_pk) and is_binary(client_nonce) do
     %__MODULE__{
@@ -75,7 +70,7 @@ defmodule Dnscrypt.Types.Query do
   end
 
   def new(_client_magic, _client_pk, _client_nonce, algorithm)
-      when algorithm not in @supported_algorithms do
+      when not is_valid_encryption_algorithm(algorithm) do
     {:error, :invalid_algorithm}
   end
 

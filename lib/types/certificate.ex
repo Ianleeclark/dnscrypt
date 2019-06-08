@@ -2,6 +2,7 @@ defmodule Dnscrypt.Types.Certificate do
   @moduledoc false
 
   alias Dnscrypt.Types.Query
+  import Dnscrypt.Utils.Guards
 
   #############
   # Constants #
@@ -63,7 +64,8 @@ defmodule Dnscrypt.Types.Certificate do
         valid_from,
         valid_until,
         extensions \\ []
-      ) do
+      )
+      when is_valid_encryption_algorithm(es_version) do
     %__MODULE__{
       es_version: es_version,
       signature: signature,
@@ -94,11 +96,10 @@ defmodule Dnscrypt.Types.Certificate do
 
     new(
       :xsalsa20poly1305,
-      signature,
-      public_key,
-      client_magic,
-      serial,
-      # TODO(ian): Convert to date
+      <<signature::size(@signature_bit_len)>>,
+      <<public_key::size(@public_key_bit_len)>>,
+      <<client_magic::size(@client_magic_bit_len)>>,
+      <<serial::size(@serial_bit_len)>>,
       start_date,
       end_date,
       []
@@ -109,7 +110,7 @@ defmodule Dnscrypt.Types.Certificate do
         <<68, 78, 83, 67, 0, 2, 0, 0, signature::size(@signature_bit_len),
           public_key::size(@public_key_bit_len), client_magic::size(@client_magic_bit_len),
           serial::size(@serial_bit_len), valid_from::size(@date_bit_len),
-          valid_until::size(@date_bit_len), _extensions::binary()>> = x
+          valid_until::size(@date_bit_len), _extensions::binary()>>
       ) do
     # TODO(ian): Don't just hastily assert these
     {:ok, start_date} = DateTime.from_unix(valid_from)
@@ -121,7 +122,6 @@ defmodule Dnscrypt.Types.Certificate do
       <<public_key::size(@public_key_bit_len)>>,
       <<client_magic::size(@client_magic_bit_len)>>,
       <<serial::size(@serial_bit_len)>>,
-      # TODO(ian): Convert to date
       start_date,
       end_date,
       []
