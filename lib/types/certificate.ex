@@ -49,6 +49,7 @@ defmodule Dnscrypt.Types.Certificate do
   @spec new(
           es_version :: Query.algorithm(),
           signature :: binary(),
+          public_key :: binary(),
           client_magic :: binary(),
           serial :: binary(),
           valid_from :: DateTime.t(),
@@ -65,7 +66,8 @@ defmodule Dnscrypt.Types.Certificate do
         valid_until,
         extensions \\ []
       )
-      when is_valid_encryption_algorithm(es_version) do
+      when is_valid_encryption_algorithm(es_version) and
+             is_binary_of_octet_size(public_key, @public_key_bit_len / 8) do
     %__MODULE__{
       es_version: es_version,
       signature: signature,

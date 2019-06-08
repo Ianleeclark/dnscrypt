@@ -10,13 +10,16 @@ defmodule Dnscrypt.Network do
           hostname :: String.t(),
           resolver_ip :: String.t(),
           resolver_port :: number()
-        ) :: binary() | {:error, :failed_to_fetch_resolver_certificate}
+        ) :: {:ok, Certificate.t()} | {:error, :failed_to_fetch_resolver_certificate}
   def fetch_dns_certificate(hostname, resolver_ip, resolver_port) do
     case DNS.query(hostname, :txt, {resolver_ip, resolver_port}) do
       %DNS.Record{anlist: [%DNS.Resource{data: [data]} | _rest]} ->
-        data
-        |> Enum.into(<<>>, fn x -> <<x>> end)
-        |> Certificate.from_binary()
+        cert =
+          data
+          |> Enum.into(<<>>, fn x -> <<x>> end)
+          |> Certificate.from_binary()
+
+        {:ok, cert}
 
       _ ->
         {:error, :failed_to_fetch_resolver_certificate}
