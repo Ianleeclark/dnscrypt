@@ -4,7 +4,7 @@ defmodule Dnscrypt.Utils.Crypto do
   alias Dnscrypt.Types.Query
 
   @spec encrypt_query(
-          algorithm :: Query.algorithms(),
+          algorithm :: Query.algorithm(),
           shared_key :: binary(),
           client_nonce :: binary(),
           client_nonce_pad :: binary(),
@@ -26,6 +26,7 @@ defmodule Dnscrypt.Utils.Crypto do
           {:ok, binary()} | {:error, :failed_to_derive_shared_key}
   def derive_shared_key(client_sk, resolver_pk)
       when is_binary(client_sk) and is_binary(resolver_pk) do
+    {:ok, <<0>>}
   end
 
   @doc """
