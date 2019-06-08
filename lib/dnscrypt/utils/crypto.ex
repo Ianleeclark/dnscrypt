@@ -4,6 +4,8 @@ defmodule Dnscrypt.Utils.Crypto do
   alias Salty.Box.{Curve25519xchacha20poly1305, Curve25519xsalsa20poly1305}
   alias Dnscrypt.Types.Query
 
+  import Dnscrypt.Utils.Guards
+
   @spec encrypt_query(
           algorithm :: Query.algorithm(),
           shared_key :: binary(),
@@ -38,7 +40,7 @@ defmodule Dnscrypt.Utils.Crypto do
   end
 
   @spec derive_shared_key(
-          algorithm :: Query.algorithm(),
+          algorithm :: atom,
           client_sk :: binary(),
           resolver_pk :: binary()
         ) ::
@@ -46,23 +48,19 @@ defmodule Dnscrypt.Utils.Crypto do
           | {:error, :failed_to_derive_shared_key}
           | {:error, :invalid_shared_key_derivation_data}
   def derive_shared_key(:xchacha20poly1305, client_sk, resolver_pk)
-      when is_binary(client_sk) and is_binary(resolver_pk) do
+      when is_binary_of_octet_size(client_sk, 32) and is_binary_of_octet_size(resolver_pk, 32) do
     case Curve25519xchacha20poly1305.beforenm(client_sk, resolver_pk) do
-      {:ok, _derived_key} = response -> response
+      {:ok, _key} = response -> response
       _ -> {:error, :failed_to_derive_shared_key}
     end
   end
 
   def derive_shared_key(:xsalsa20poly1305, client_sk, resolver_pk)
-      when is_binary(client_sk) and is_binary(resolver_pk) do
+      when is_binary_of_octet_size(client_sk, 32) and is_binary_of_octet_size(resolver_pk, 32) do
     case Curve25519xsalsa20poly1305.beforenm(client_sk, resolver_pk) do
-      {:ok, _derived_key} = response -> response
+      {:ok, _key} = response -> response
       _ -> {:error, :failed_to_derive_shared_key}
     end
-  end
-
-  def derive_shared_key(_, _, _) do
-    {:error, :invalid_shared_key_derivation_data}
   end
 
   @doc """
