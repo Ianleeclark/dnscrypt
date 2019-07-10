@@ -12,6 +12,7 @@ defmodule Dnscrypt.Types.Query do
   # Defined as `Salty.Secretbox.Xchacha20poly1305.{key,nonce}bytes`
   # Can't call, though due to nif loading post-compilation
   @xchacha_key_len 32
+  # TODO(ian): nonce lens are used in several places, move to constants
   @xchacha_nonce_len 24
 
   # Defined as `Salty.Secretbox.Xsalsa20poly1305.{key,nonce}bytes`

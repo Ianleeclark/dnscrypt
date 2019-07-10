@@ -3,7 +3,7 @@ defmodule Dnscrypt.Network do
   A general purpose (supporting both TCP and UDP) networking api.
   """
 
-  alias Dnscrypt.Types.Certificate
+  alias Dnscrypt.Types.{Certificate, Response}
   alias DNS
 
   @spec fetch_dns_certificate(
@@ -23,6 +23,22 @@ defmodule Dnscrypt.Network do
 
       _ ->
         {:error, :failed_to_fetch_resolver_certificate}
+    end
+  end
+
+  @spec send_tcp_request(
+          resolver_ip :: String.t(),
+          resolver_port :: number(),
+          data :: binary()
+        ) :: {:ok, Response.t()}
+  def send_tcp_request(resolver_ip, resolver_port, data) when is_binary(data) do
+    length = 1
+
+    with {:ok, socket} <- :gen_tcp.connect(resolver_ip, resolver_port, [:binary, active: false]),
+         :ok <- :gen_tcp.send(socket, data),
+         {:ok, response} when is_binary(response) <- :gen_tcp.recv(socket, length),
+         %Response{} = dns_response <- Response.from_binary(response) do
+      {:ok, dns_response}
     end
   end
 end

@@ -24,18 +24,21 @@ defmodule Dnscrypt.Utils.Crypto do
         _client_query_pad
       ) do
     padded_nonce = client_nonce <> create_padding(12)
+    query = Query.to_binary(client_query)
 
     # TODO(ian): Do whatever is necessary after this case, not complete
     try do
       case algorithm do
         :xchacha20poly1305 ->
-          Curve25519xchacha20poly1305.easy_afternm(client_query, padded_nonce, shared_key)
+          Curve25519xchacha20poly1305.easy_afternm(query, padded_nonce, shared_key)
 
         :xsalsa20poly1305 ->
-          Curve25519xsalsa20poly1305.easy_afternm(client_query, padded_nonce, shared_key)
+          Curve25519xsalsa20poly1305.easy_afternm(query, padded_nonce, shared_key)
       end
     rescue
-      _ -> {:error, :failed_to_encrypt_query}
+      x ->
+        IO.inspect(x)
+        {:error, :failed_to_encrypt_query}
     end
   end
 
@@ -83,4 +86,9 @@ defmodule Dnscrypt.Utils.Crypto do
       <<0>>
     end)
   end
+
+  # TODO(ian): Move these magic numbers to constants
+  def nonce(:xsalsa20poly1305), do: {:ok, :crypto.strong_rand_bytes(24)}
+
+  def nonce(:xchacha20poly1305), do: {:ok, :crypto.strong_rand_bytes(24)}
 end
