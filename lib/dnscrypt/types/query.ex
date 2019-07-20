@@ -30,7 +30,7 @@ defmodule Dnscrypt.Types.Query do
           client_magic: binary(),
           client_pk: binary(),
           client_nonce: binary(),
-          encrypted_query: binary(),
+          encrypted_query: binary() | nil,
           algorithm: algorithm()
         }
 
@@ -47,6 +47,7 @@ defmodule Dnscrypt.Types.Query do
   ##############
 
   @doc """
+  Creates a new Query
   """
   @spec new(
           client_magic :: binary(),
@@ -80,7 +81,7 @@ defmodule Dnscrypt.Types.Query do
   @doc """
   Converts query struct to binary.
   """
-  @spec to_binary(__MODULE__.t()) :: binary() | {:error, :invalid_query}
+  @spec to_binary(t()) :: binary() | {:error, :invalid_query}
   def to_binary(
         %__MODULE__{
           algorithm: :xsalsa20poly1305
@@ -103,19 +104,32 @@ defmodule Dnscrypt.Types.Query do
   # Internal Private Functions #
   ##############################
 
-  @spec do_to_binary(__MODULE__.t(), key_len :: non_neg_integer(), nonce_len :: non_neg_integer()) ::
-          any()
+  @spec do_to_binary(t(), key_len :: non_neg_integer(), nonce_len :: non_neg_integer()) :: any()
   def do_to_binary(
         %__MODULE__{
-          client_magic: <<magic>>,
-          client_pk: <<pk>>,
-          client_nonce: <<nonce>>,
+          client_magic: magic,
+          client_pk: pk,
+          client_nonce: nonce,
           encrypted_query: encrypted_query
         },
-        key_len,
-        nonce_len
-      ) do
-    <<magic::size(@client_magic_octet_len), pk::size(key_len), nonce::size(nonce_len),
-      encrypted_query::binary()>>
+        _key_len,
+        _nonce_len
+      )
+      when is_nil(encrypted_query) do
+    magic <> pk <> nonce
+  end
+
+  def do_to_binary(
+        %__MODULE__{
+          client_magic: magic,
+          client_pk: pk,
+          client_nonce: nonce,
+          encrypted_query: encrypted_query
+        },
+        _key_len,
+        _nonce_len
+      )
+      when not is_nil(encrypted_query) do
+    magic <> pk <> nonce <> encrypted_query
   end
 end

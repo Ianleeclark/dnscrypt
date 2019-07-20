@@ -17,6 +17,7 @@ defmodule Dnscrypt do
           resolver_ip :: String.t(),
           resolver_port :: non_neg_integer()
         ) :: any()
+  # TODO(ian): Support opts like timeout
   def query(hostname, resolver_host, resolver_ip, resolver_port)
       when is_bitstring(hostname) and is_bitstring(resolver_ip) and is_bitstring(resolver_host) and
              is_number(resolver_port) do
@@ -36,7 +37,7 @@ defmodule Dnscrypt do
              client_magic,
              @client_pk,
              client_nonce,
-             Query.to_binary(encrypted_query),
+             encrypted_query,
              algorithm
            ),
          binary_query when is_binary(binary_query) <- Query.to_binary(final_query),
