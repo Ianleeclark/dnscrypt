@@ -24,7 +24,8 @@ defmodule Dnscrypt.Utils.Crypto do
         _client_query_pad
       )
       when is_valid_encryption_algorithm(algorithm) do
-    padded_nonce = client_nonce <> create_padding(12)
+    # NOTE: The client_nonce is only half the required length, the rest should be null-padded
+    padded_nonce = client_nonce <> create_padding(byte_size(client_nonce))
     query = Query.to_binary(client_query)
 
     # TODO(ian): DOnt keep as a static len -- spec says random
@@ -32,17 +33,19 @@ defmodule Dnscrypt.Utils.Crypto do
 
     client_nonce_padding = create_padding(12)
 
-    query_to_encrypt =
-      shared_key <> client_nonce <> client_nonce_padding <> query <> query_padding
+    query_to_encrypt = query <> query_padding
+
+    finalized_key = shared_key <> client_nonce <> client_nonce_padding
+    IO.inspect(shared_key)
 
     # TODO(ian): Do whatever is necessary after this case, not complete
     try do
       case algorithm do
         :xchacha20poly1305 ->
-          Curve25519xchacha20poly1305.easy_afternm(query_to_encrypt, padded_nonce, shared_key)
+          Curve25519xchacha20poly1305.easy_afternm(query_to_encrypt, padded_nonce, finalized_key)
 
         :xsalsa20poly1305 ->
-          Curve25519xsalsa20poly1305.easy_afternm(query_to_encrypt, padded_nonce, shared_key)
+          Curve25519xsalsa20poly1305.easy_afternm(query_to_encrypt, padded_nonce, finalized_key)
       end
     rescue
       x ->
